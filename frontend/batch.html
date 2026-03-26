@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VisionCore — Batch Processing</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<canvas id="grain" style="position:fixed;inset:0;pointer-events:none;z-index:9989;"></canvas>
+<nav class="navbar">
+  <div class="navbar-brand"><div class="navbar-logo">VC</div>VISION<span class="dot">·</span>CORE</div>
+  <ul class="navbar-nav">
+    <li><a href="index.html">Classify</a></li>
+    <li><a href="detect.html">Detect</a></li>
+    <li><a href="batch.html" class="active">Batch</a></li>
+    <li><a href="docs.html">Docs</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="status-dot status-dot--ready" id="sDot"></span>
+    <span id="sLabel" style="font-family:var(--mono);font-size:.62rem;color:var(--text-lo);letter-spacing:.1em;">READY</span>
+  </div>
+</nav>
+<div style="padding:48px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px;">
+  <div class="container">
+    <p style="font-family:var(--mono);font-size:.68rem;color:var(--accent3);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><span style="width:20px;height:1px;background:var(--accent3);display:inline-block;"></span>batch processing · multi-image</p>
+    <h1 style="font-size:clamp(2rem,4vw,3.2rem);text-transform:uppercase;line-height:1;margin-bottom:10px;">Process <span style="color:var(--accent3);">many at once.</span></h1>
+    <p style="color:var(--text-mid);font-size:.9rem;max-width:500px;">Upload up to 10 images and classify them all. Watch real-time progress. Export a full JSON report.</p>
+  </div>
+</div>
+<main>
+  <div class="container" style="padding-bottom:60px;">
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start;">
+      <div>
+        <div class="panel">
+          <div class="panel-title">Batch Settings</div>
+          <div class="ctrl-group">
+            <label class="ctrl-label" for="bBackend">Backend</label>
+            <select id="bBackend" class="ctrl-select">
+              <option value="tensorflow">TensorFlow — MobileNetV2</option>
+              <option value="torch">PyTorch — ResNet-50</option>
+              <option value="opencv">OpenCV DNN — GoogLeNet</option>
+            </select>
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label" for="bTopK">Top-K per image</label>
+            <select id="bTopK" class="ctrl-select">
+              <option value="3" selected>3</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Upload Images</div>
+          <div class="drop-zone" id="bDrop" style="min-height:130px;">
+            <input type="file" id="bFileInput" accept="image/*" multiple hidden/>
+            <div class="drop-inner">
+              <div class="drop-icon">⊞</div>
+              <p class="drop-label">DROP MULTIPLE IMAGES</p>
+              <p class="drop-sub">or <button class="link-btn" id="bBrowseBtn" style="color:var(--accent3);">browse files</button></p>
+              <p class="drop-formats">max 10 images per batch</p>
+            </div>
+          </div>
+          <div id="fileQueue" class="hidden" style="margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-family:var(--mono);font-size:.62rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em;">
+              <span id="qCount">0 files</span>
+              <button id="clearQ" style="background:none;border:none;color:var(--danger);cursor:pointer;font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;">CLEAR ALL</button>
+            </div>
+            <div id="fileList"></div>
+          </div>
+          <div id="bProgressWrap" class="hidden" style="margin:14px 0;">
+            <div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" id="bFill"></div></div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.62rem;color:var(--text-lo);">
+              <span id="bProgressText">Initialising…</span>
+              <span id="bProgressPct">0%</span>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;">
+            <button class="btn" id="runBatch" disabled style="background:var(--accent3);border-color:var(--accent3);color:var(--bg);font-family:var(--cond);font-weight:700;font-size:.82rem;letter-spacing:.1em;padding:9px 20px;cursor:pointer;border-radius:var(--radius);flex:1;"><span>⊞</span> RUN BATCH</button>
+            <button class="btn btn-outline btn-sm" id="exportBatch" style="display:none;">EXPORT JSON</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-title">Results <span id="rCount" style="margin-left:auto;font-family:var(--mono);font-size:.62rem;color:var(--text-lo);font-weight:400;"></span></div>
+          <div id="bEmpty" class="result-empty">⊞ AWAITING BATCH<br/><span style="font-size:.6rem;opacity:.4;">upload images and run</span></div>
+          <div class="results-grid hidden" id="rGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="footer">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <div class="footer-left">[<span>VISIONCORE</span>]</div>
+    <div class="footer-links"><a href="index.html">Classify</a><a href="detect.html">Detect</a><a href="batch.html">Batch</a><a href="docs.html">Docs</a></div>
+  </div>
+</footer>
+<script src="js/app.js"></script>
+<script>
+'use strict';
+const bDrop=document.getElementById('bDrop'),bFileInput=document.getElementById('bFileInput'),
+  bBrowseBtn=document.getElementById('bBrowseBtn'),fileQueue=document.getElementById('fileQueue'),
+  fileList=document.getElementById('fileList'),qCount=document.getElementById('qCount'),
+  clearQ=document.getElementById('clearQ'),runBatch=document.getElementById('runBatch'),
+  exportBatch=document.getElementById('exportBatch'),bProgressWrap=document.getElementById('bProgressWrap'),
+  bFill=document.getElementById('bFill'),bProgressText=document.getElementById('bProgressText'),
+  bProgressPct=document.getElementById('bProgressPct'),bEmpty=document.getElementById('bEmpty'),
+  rGrid=document.getElementById('rGrid'),rCount=document.getElementById('rCount'),
+  sDot=document.getElementById('sDot'),sLabel=document.getElementById('sLabel');
+let entries=[],batchResults=[];
+
+bBrowseBtn.onclick=e=>{e.stopPropagation();bFileInput.click();};
+bDrop.onclick=()=>bFileInput.click();
+bFileInput.onchange=e=>addFiles([...e.target.files]);
+bDrop.ondragover=e=>{e.preventDefault();bDrop.classList.add('drag-over');};
+bDrop.ondragleave=()=>bDrop.classList.remove('drag-over');
+bDrop.ondrop=e=>{e.preventDefault();bDrop.classList.remove('drag-over');addFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')));};
+clearQ.onclick=()=>{entries.forEach(e=>URL.revokeObjectURL(e.url));entries=[];renderQueue();bFileInput.value='';};
+
+function addFiles(files){
+  const avail=10-entries.length;
+  if(avail<=0){UI.toast('Max 10 files per batch','error');return;}
+  files.slice(0,avail).forEach(f=>entries.push({file:f,url:URL.createObjectURL(f),id:Date.now()+Math.random()}));
+  renderQueue();
+}
+function renderQueue(){
+  if(!entries.length){fileQueue.classList.add('hidden');runBatch.disabled=true;return;}
+  fileQueue.classList.remove('hidden');runBatch.disabled=false;
+  qCount.textContent=`${entries.length} file${entries.length!==1?'s':''} queued`;
+  fileList.innerHTML='';
+  entries.forEach((e,i)=>{
+    const d=document.createElement('div');d.className='file-item';d.id=`fi-${e.id}`;
+    d.innerHTML=`<img class="file-thumb" src="${e.url}"/><span class="file-name">${e.file.name}</span><span class="file-size">${(e.file.size/1024).toFixed(0)} KB</span><span class="file-status" id="fs-${e.id}" style="color:var(--text-lo);">QUEUED</span><button class="file-remove" data-i="${i}">✕</button>`;
+    fileList.appendChild(d);
+  });
+  fileList.querySelectorAll('.file-remove').forEach(btn=>btn.onclick=e=>{const i=parseInt(e.currentTarget.dataset.i);URL.revokeObjectURL(entries[i].url);entries.splice(i,1);renderQueue();});
+}
+
+runBatch.onclick=async()=>{
+  if(!entries.length)return;
+  const backend=document.getElementById('bBackend').value;
+  const topK=parseInt(document.getElementById('bTopK').value);
+  runBatch.disabled=true;runBatch.innerHTML='<span class="spinner"></span> PROCESSING…';
+  bProgressWrap.classList.remove('hidden');bEmpty.classList.add('hidden');
+  rGrid.innerHTML='';rGrid.classList.add('hidden');batchResults=[];
+  setStatus('processing','PROCESSING');
+  for(let i=0;i<entries.length;i++){
+    const e=entries[i];
+    const pct=Math.round(i/entries.length*100);
+    bFill.style.width=pct+'%';bProgressText.textContent=`Processing ${e.file.name}…`;bProgressPct.textContent=pct+'%';
+    const fsEl=document.getElementById(`fs-${e.id}`),fiEl=document.getElementById(`fi-${e.id}`);
+    if(fsEl){fsEl.textContent='RUNNING';fsEl.style.color='var(--accent2)';}
+    try{
+      const data=await API.classify(e.file,backend,topK);
+      batchResults.push({source:e.file.name,predictions:data.predictions||[],url:e.url,error:null});
+      if(fsEl){fsEl.textContent='DONE';fsEl.style.color='var(--accent)';}
+      if(fiEl)fiEl.classList.add('done');
+    }catch(err){
+      batchResults.push({source:e.file.name,predictions:[],url:e.url,error:err.message});
+      if(fsEl){fsEl.textContent='ERROR';fsEl.style.color='var(--danger)';}
+      if(fiEl)fiEl.classList.add('error');
+    }
+    await new Promise(r=>setTimeout(r,180+Math.random()*250));
+  }
+  bFill.style.width='100%';bProgressText.textContent=`Completed ${entries.length} images`;bProgressPct.textContent='100%';
+  renderGrid(batchResults);
+  runBatch.disabled=false;runBatch.innerHTML='<span>⊞</span> RUN BATCH';
+  exportBatch.style.display='inline-flex';setStatus('done','DONE');
+};
+
+function renderGrid(results){
+  rGrid.classList.remove('hidden');rCount.textContent=`${results.length} result${results.length!==1?'s':''}`;
+  results.forEach((item,idx)=>{
+    const card=document.createElement('div');card.className='result-card';card.style.animationDelay=`${idx*.05}s`;
+    if(item.error){
+      card.innerHTML=`<div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.62rem;color:var(--danger);">ERROR</div><div class="result-card-body"><div class="result-card-fname">${item.source}</div><div style="font-family:var(--mono);font-size:.68rem;color:var(--danger);">${item.error}</div></div>`;
+    }else{
+      const top=item.predictions[0]||{};
+      const bars=(item.predictions||[]).slice(0,3).map(p=>`<div class="mini-bar-row"><span class="mini-bar-label">${p.label}</span><div class="mini-bar-track"><div class="mini-bar-fill" style="width:${(p.confidence*100).toFixed(0)}%"></div></div><span class="mini-bar-pct">${(p.confidence*100).toFixed(0)}%</span></div>`).join('');
+      card.innerHTML=`<img class="result-card-img" src="${item.url}" loading="lazy"/><div class="result-card-body"><div class="result-card-fname">${item.source}</div><div class="result-card-top">${top.label||'—'}</div><div class="result-card-conf">${top.confidence?(top.confidence*100).toFixed(1)+'%':''}</div><div>${bars}</div></div>`;
+    }
+    rGrid.appendChild(card);
+  });
+}
+exportBatch.onclick=()=>{const d=batchResults.map(({source,predictions,error})=>({source,predictions,error}));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='batch_results.json';a.click();UI.toast(`Exported ${batchResults.length} results!`);};
+function setStatus(s,t){sDot.className='status-dot';sDot.classList.add(`status-dot--${s}`);sLabel.textContent=t;}
+</script>
+</body>
+</html>

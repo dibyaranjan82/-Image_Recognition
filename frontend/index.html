@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VisionCore — Image Classification</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<canvas id="grain" style="position:fixed;inset:0;pointer-events:none;z-index:9989;"></canvas>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="navbar-logo">VC</div>
+    VISION<span class="dot">·</span>CORE
+  </div>
+  <ul class="navbar-nav">
+    <li><a href="index.html" class="active">Classify</a></li>
+    <li><a href="detect.html">Detect</a></li>
+    <li><a href="batch.html">Batch</a></li>
+    <li><a href="docs.html">Docs</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="status-dot status-dot--ready" id="sDot"></span>
+    <span id="sLabel" style="font-family:var(--mono);font-size:.62rem;color:var(--text-lo);letter-spacing:.1em;">READY</span>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section style="padding:64px 0 48px;position:relative;overflow:hidden;border-bottom:1px solid var(--border);">
+  <div style="position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.25;"></div>
+  <div class="container" style="position:relative;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;">
+      <div>
+        <p style="font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="width:20px;height:1px;background:var(--accent);display:inline-block;"></span>deep learning · computer vision</p>
+        <h1 style="font-size:clamp(2rem,4vw,3.4rem);line-height:1;text-transform:uppercase;margin-bottom:18px;">See the world<br/><span style="color:var(--accent);">through the machine.</span></h1>
+        <p style="color:var(--text-mid);font-size:.95rem;line-height:1.8;max-width:460px;margin-bottom:28px;">Upload any image. State-of-the-art neural networks classify objects, detect scenes, and return confidence scores in milliseconds.</p>
+        <div style="display:flex;gap:28px;">
+          <div><div style="font-family:var(--cond);font-size:2rem;font-weight:900;color:var(--accent);line-height:1;">1000</div><div style="font-family:var(--mono);font-size:.6rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.12em;">ImageNet Classes</div></div>
+          <div><div style="font-family:var(--cond);font-size:2rem;font-weight:900;color:var(--accent);line-height:1;">~43ms</div><div style="font-family:var(--mono);font-size:.6rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.12em;">Avg Inference</div></div>
+          <div><div style="font-family:var(--cond);font-size:2rem;font-weight:900;color:var(--accent);line-height:1;">3</div><div style="font-family:var(--mono);font-size:.6rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.12em;">ML Backends</div></div>
+        </div>
+      </div>
+      <!-- Animated scan card -->
+      <div style="position:relative;height:280px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg-panel);">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 18px var(--accent);animation:scanDown 2.8s linear infinite;"></div>
+        <div style="position:absolute;top:10px;left:10px;width:18px;height:18px;border-top:2px solid var(--accent);border-left:2px solid var(--accent);"></div>
+        <div style="position:absolute;top:10px;right:10px;width:18px;height:18px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);"></div>
+        <div style="position:absolute;bottom:10px;left:10px;width:18px;height:18px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent);"></div>
+        <div style="position:absolute;bottom:10px;right:10px;width:18px;height:18px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent);"></div>
+        <div style="position:absolute;inset:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--accent);animation:fadeIn .4s ease .2s both;">▶ model loaded — MobileNetV2 <span style="color:var(--accent);">OK</span></div>
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--text-mid);animation:fadeIn .4s ease .7s both;">▶ processing image.jpg…</div>
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--text-mid);animation:fadeIn .4s ease 1.2s both;">▶ top predictions:</div>
+          <div style="font-family:var(--mono);font-size:.62rem;animation:fadeIn .4s ease 1.6s both;"><span style="color:var(--text-lo);margin-right:8px;">01</span>golden_retriever <span style="color:var(--accent);">88.2%</span></div>
+          <div style="font-family:var(--mono);font-size:.62rem;animation:fadeIn .4s ease 1.9s both;"><span style="color:var(--text-lo);margin-right:8px;">02</span>labrador_retriever <span style="color:var(--accent2);">6.5%</span></div>
+          <div style="font-family:var(--mono);font-size:.62rem;animation:fadeIn .4s ease 2.2s both;"><span style="color:var(--text-lo);margin-right:8px;">03</span>cocker_spaniel <span style="color:var(--accent3);">3.1%</span></div>
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--text-lo);animation:fadeIn .4s ease 2.6s both;">▶ inference: <span style="color:var(--accent);">43ms</span></div>
+        </div>
+        <div style="position:absolute;bottom:12px;left:14px;font-family:var(--mono);font-size:.58rem;color:var(--accent);letter-spacing:.15em;">VISIONCORE · LIVE DEMO</div>
+      </div>
+    </div>
+  </div>
+</section>
+<style>@keyframes scanDown{0%{top:0}100%{top:100%}}</style>
+
+<!-- Main -->
+<main>
+  <div class="container" style="padding:36px 24px 60px;">
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+
+      <!-- Left -->
+      <div>
+        <!-- Config -->
+        <div class="panel">
+          <div class="panel-title">Configuration</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;">
+            <div class="ctrl-group" style="flex:1;min-width:160px;">
+              <label class="ctrl-label" for="backend">Backend Model</label>
+              <select id="backend" class="ctrl-select">
+                <option value="tensorflow">TensorFlow — MobileNetV2</option>
+                <option value="torch">PyTorch — ResNet-50</option>
+                <option value="opencv">OpenCV DNN — GoogLeNet</option>
+              </select>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label" for="topk">Top-K Results</label>
+              <select id="topk" class="ctrl-select">
+                <option value="3">3</option>
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div class="ctrl-group">
+              <label class="ctrl-label">Pre-process</label>
+              <label class="toggle" style="margin-top:6px;">
+                <input type="checkbox" id="augToggle"/>
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="panel">
+          <div class="panel-title">Input Image</div>
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept="image/*" hidden/>
+            <div class="drop-inner">
+              <div class="drop-icon">⬡</div>
+              <p class="drop-label">DRAG &amp; DROP IMAGE HERE</p>
+              <p class="drop-sub">or <button class="link-btn" id="browseBtn">browse files</button></p>
+              <p class="drop-formats">JPG · PNG · WEBP · BMP · max 10 MB</p>
+            </div>
+          </div>
+          <div class="preview-area hidden" id="previewArea">
+            <img id="previewImg" src="" alt="Preview"/>
+            <button class="preview-clear" id="clearBtn">✕</button>
+          </div>
+          <div class="image-meta hidden" id="imgMeta"></div>
+          <div class="url-row">
+            <span class="url-prefix">URL://</span>
+            <input type="text" id="urlInput" class="url-input" placeholder="paste image URL and press Enter"/>
+            <button class="btn btn-outline btn-sm" id="urlBtn">LOAD</button>
+          </div>
+          <div class="analyse-row">
+            <button class="btn btn-primary" id="runBtn" disabled>
+              <span>⬡</span> RUN ANALYSIS
+            </button>
+            <span class="analyse-hint" id="hint">Upload an image to begin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Results -->
+      <div>
+        <div class="panel">
+          <div class="panel-title">Results</div>
+          <div id="emptyState" class="result-empty">AWAITING INPUT<br/><span style="font-size:.6rem;opacity:.4;">run analysis to see predictions</span></div>
+          <div id="resultsContent" class="hidden">
+            <!-- Spotlight arc -->
+            <div class="spotlight">
+              <svg class="spotlight-ring" viewBox="0 0 116 116">
+                <circle cx="58" cy="58" r="52" stroke-width="4" stroke="var(--border)" fill="none"/>
+                <circle cx="58" cy="58" r="52" stroke-width="4" stroke="var(--accent)" fill="none"
+                        stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                        id="arc" transform="rotate(-90 58 58)"/>
+              </svg>
+              <div class="spotlight-info">
+                <div class="spotlight-conf" id="topConf">—</div>
+                <div class="spotlight-label" id="topLabel">—</div>
+              </div>
+            </div>
+            <div class="result-meta" id="resMeta"></div>
+            <div id="predList"></div>
+            <div style="margin-top:18px;display:flex;justify-content:flex-end;">
+              <button class="btn btn-outline btn-sm" id="exportBtn">EXPORT JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature cards -->
+    <div style="margin-top:52px;">
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">// capabilities</div>
+      <h2 style="font-size:clamp(1.5rem,2.5vw,2.2rem);text-transform:uppercase;margin-bottom:28px;">What VisionCore can do</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:all .25s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.7rem;margin-bottom:12px;">⬡</div>
+          <h3 style="font-family:var(--cond);font-size:.95rem;font-weight:900;text-transform:uppercase;margin-bottom:8px;letter-spacing:.06em;">Image Classification</h3>
+          <p style="font-size:.83rem;color:var(--text-mid);line-height:1.7;margin-bottom:10px;">1000-class ImageNet with MobileNetV2, ResNet-50, or GoogLeNet. Sub-50ms on CPU.</p>
+          <a href="index.html" style="font-family:var(--mono);font-size:.72rem;color:var(--accent);">try it →</a>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:all .25s;" onmouseover="this.style.borderColor='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.7rem;margin-bottom:12px;">◻</div>
+          <h3 style="font-family:var(--cond);font-size:.95rem;font-weight:900;text-transform:uppercase;margin-bottom:8px;letter-spacing:.06em;">Object Detection</h3>
+          <p style="font-size:.83rem;color:var(--text-mid);line-height:1.7;margin-bottom:10px;">Detect 80 COCO classes with YOLOv5 or SSD MobileNet. Bounding boxes on canvas.</p>
+          <a href="detect.html" style="font-family:var(--mono);font-size:.72rem;color:var(--accent2);">try it →</a>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:all .25s;" onmouseover="this.style.borderColor='var(--accent3)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.7rem;margin-bottom:12px;">⊞</div>
+          <h3 style="font-family:var(--cond);font-size:.95rem;font-weight:900;text-transform:uppercase;margin-bottom:8px;letter-spacing:.06em;">Batch Processing</h3>
+          <p style="font-size:.83rem;color:var(--text-mid);line-height:1.7;margin-bottom:10px;">Classify many images at once. Real-time progress. Export results as JSON.</p>
+          <a href="batch.html" style="font-family:var(--mono);font-size:.72rem;color:var(--accent3);">try it →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <div class="footer-left">[<span>VISIONCORE</span>] · Python · TensorFlow · PyTorch · OpenCV</div>
+    <div class="footer-links">
+      <a href="index.html">Classify</a><a href="detect.html">Detect</a>
+      <a href="batch.html">Batch</a><a href="docs.html">Docs</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+<script>
+'use strict';
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput'),
+  browseBtn=document.getElementById('browseBtn'),previewArea=document.getElementById('previewArea'),
+  previewImg=document.getElementById('previewImg'),clearBtn=document.getElementById('clearBtn'),
+  imgMeta=document.getElementById('imgMeta'),urlInput=document.getElementById('urlInput'),
+  urlBtn=document.getElementById('urlBtn'),runBtn=document.getElementById('runBtn'),
+  hint=document.getElementById('hint'),emptyState=document.getElementById('emptyState'),
+  resultsContent=document.getElementById('resultsContent'),predList=document.getElementById('predList'),
+  topConf=document.getElementById('topConf'),topLabel=document.getElementById('topLabel'),
+  arc=document.getElementById('arc'),resMeta=document.getElementById('resMeta'),
+  exportBtn=document.getElementById('exportBtn'),sDot=document.getElementById('sDot'),
+  sLabel=document.getElementById('sLabel');
+let imgSrc=null, lastPreds=[];
+
+browseBtn.onclick=e=>{e.stopPropagation();fileInput.click();};
+dropZone.onclick=()=>{if(!imgSrc)fileInput.click();};
+fileInput.onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0]);};
+dropZone.ondragover=e=>{e.preventDefault();dropZone.classList.add('drag-over');};
+dropZone.ondragleave=()=>dropZone.classList.remove('drag-over');
+dropZone.ondrop=e=>{e.preventDefault();dropZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadFile(f);};
+clearBtn.onclick=()=>{imgSrc=null;previewArea.classList.add('hidden');dropZone.classList.remove('hidden');imgMeta.classList.add('hidden');runBtn.disabled=true;hint.textContent='Upload an image to begin';fileInput.value='';setStatus('ready','READY');};
+urlBtn.onclick=loadURL;urlInput.onkeydown=e=>{if(e.key==='Enter')loadURL();};
+
+function loadFile(file){
+  const r=new FileReader();
+  r.onload=e=>{showPreview(e.target.result);imgMeta.textContent=`${file.name} · ${(file.size/1024).toFixed(0)} KB`;imgMeta.classList.remove('hidden');};
+  r.readAsDataURL(file);
+}
+function loadURL(){const u=urlInput.value.trim();if(!u)return;showPreview(u);imgMeta.textContent='URL image loaded';imgMeta.classList.remove('hidden');}
+function showPreview(src){imgSrc=src;previewImg.src=src;previewArea.classList.remove('hidden');dropZone.classList.add('hidden');runBtn.disabled=false;hint.textContent='Ready — click Run Analysis';setStatus('ready','READY');}
+
+runBtn.onclick=async()=>{
+  if(!imgSrc)return;
+  const backend=document.getElementById('backend').value;
+  const topK=parseInt(document.getElementById('topk').value);
+  runBtn.disabled=true;runBtn.innerHTML='<span class="spinner"></span> PROCESSING…';
+  setStatus('processing','PROCESSING');
+  const file=fileInput.files[0];
+  const data=file?await API.classify(file,backend,topK):API._mockClassify('url',topK);
+  lastPreds=data.predictions||[];
+  renderResults(lastPreds,data.backend||backend);
+  runBtn.disabled=false;runBtn.innerHTML='<span>⬡</span> RUN ANALYSIS';
+  setStatus('done','DONE');
+};
+
+function renderResults(preds,backend){
+  emptyState.classList.add('hidden');resultsContent.classList.remove('hidden');
+  const top=preds[0];
+  topConf.textContent=(top.confidence*100).toFixed(1)+'%';
+  topLabel.textContent=top.label.toUpperCase();
+  const circ=326.7;arc.style.transition='none';arc.style.strokeDashoffset=circ;
+  requestAnimationFrame(()=>{arc.style.transition='stroke-dashoffset 1s cubic-bezier(.22,.68,0,1.2)';arc.style.strokeDashoffset=circ*(1-top.confidence);});
+  resMeta.innerHTML=`<span class="badge badge-success">COMPLETE</span><span class="text-mono text-mid">${backend.toUpperCase()} · ${top.inference_ms}ms · top-${preds.length}</span>`;
+  UI.renderPredictions(predList,preds);
+}
+
+exportBtn.onclick=()=>{
+  if(!lastPreds.length)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(lastPreds,null,2)],{type:'application/json'}));a.download='visioncore_classify.json';a.click();
+  UI.toast('Results exported!');
+};
+
+function setStatus(s,t){sDot.className='status-dot';sDot.classList.add(`status-dot--${s}`);sLabel.textContent=t;}
+</script>
+</body>
+</html>

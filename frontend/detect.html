@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VisionCore — Object Detection</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<canvas id="grain" style="position:fixed;inset:0;pointer-events:none;z-index:9989;"></canvas>
+<nav class="navbar">
+  <div class="navbar-brand"><div class="navbar-logo">VC</div>VISION<span class="dot">·</span>CORE</div>
+  <ul class="navbar-nav">
+    <li><a href="index.html">Classify</a></li>
+    <li><a href="detect.html" class="active">Detect</a></li>
+    <li><a href="batch.html">Batch</a></li>
+    <li><a href="docs.html">Docs</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="status-dot status-dot--ready" id="sDot"></span>
+    <span id="sLabel" style="font-family:var(--mono);font-size:.62rem;color:var(--text-lo);letter-spacing:.1em;">READY</span>
+  </div>
+</nav>
+<div style="padding:48px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px;">
+  <div class="container">
+    <p style="font-family:var(--mono);font-size:.68rem;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><span style="width:20px;height:1px;background:var(--accent2);display:inline-block;"></span>object detection · bounding boxes</p>
+    <h1 style="font-size:clamp(2rem,4vw,3.2rem);text-transform:uppercase;line-height:1;margin-bottom:10px;">Locate &amp; <span style="color:var(--accent2);">label objects.</span></h1>
+    <p style="color:var(--text-mid);font-size:.9rem;max-width:500px;">Detect up to 80 COCO object classes with YOLOv5 or SSD MobileNet. Bounding boxes drawn live on canvas.</p>
+  </div>
+</div>
+<main>
+  <div class="container" style="padding-bottom:60px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+      <div>
+        <div class="panel">
+          <div class="panel-title" style="--accent:var(--accent2);">Settings</div>
+          <div class="ctrl-group">
+            <label class="ctrl-label" for="detBackend">Backend</label>
+            <select id="detBackend" class="ctrl-select">
+              <option value="yolo">YOLOv5s — Fast &amp; Accurate</option>
+              <option value="opencv">OpenCV SSD MobileNet v3</option>
+            </select>
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Confidence Threshold</label>
+            <div class="range-row">
+              <input type="range" id="confRange" min="10" max="95" value="50"/>
+              <span id="confVal" style="font-family:var(--mono);font-size:.8rem;color:var(--accent2);min-width:36px;text-align:right;">0.50</span>
+            </div>
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Draw Boxes on Canvas</label>
+            <label class="toggle" style="margin-top:6px;"><input type="checkbox" id="drawBoxes" checked/><span class="toggle-track" style="border-color:var(--accent2);"></span></label>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Input Image</div>
+          <div class="drop-zone" id="dropZone" style="border-color:var(--border);">
+            <input type="file" id="fileInput" accept="image/*" hidden/>
+            <div class="drop-inner">
+              <div class="drop-icon">◻</div>
+              <p class="drop-label">DRAG &amp; DROP IMAGE</p>
+              <p class="drop-sub">or <button class="link-btn" id="browseBtn" style="color:var(--accent2);">browse files</button></p>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn" id="detectBtn" disabled style="background:var(--accent2);border-color:var(--accent2);color:var(--bg);font-family:var(--cond);font-weight:700;font-size:.82rem;letter-spacing:.1em;padding:9px 20px;cursor:pointer;border-radius:var(--radius);">
+              <span>◻</span> RUN DETECTION
+            </button>
+            <button class="btn btn-outline btn-sm" id="saveBtn" style="display:none;">SAVE IMAGE</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-title">Detection Canvas</div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <div class="canvas-placeholder" id="canvasPlaceholder">[ CANVAS ]<br/>load an image to begin</div>
+            <canvas id="detCanvas" class="hidden"></canvas>
+          </div>
+          <div style="margin-top:7px;font-family:var(--mono);font-size:.62rem;color:var(--text-lo);" id="canvasMeta"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Detected Objects</div>
+          <div id="detEmpty" class="result-empty">NO DETECTIONS YET<br/><span style="font-size:.6rem;opacity:.4;">run detection to see results</span></div>
+          <div id="detResults" class="hidden">
+            <div id="detSummary" style="display:flex;gap:22px;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:14px;"></div>
+            <div id="detList"></div>
+            <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+              <button class="btn btn-outline btn-sm" id="exportDetBtn">EXPORT JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="footer">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <div class="footer-left">[<span>VISIONCORE</span>]</div>
+    <div class="footer-links"><a href="index.html">Classify</a><a href="detect.html">Detect</a><a href="batch.html">Batch</a><a href="docs.html">Docs</a></div>
+  </div>
+</footer>
+<script src="js/app.js"></script>
+<script>
+'use strict';
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput'),
+  browseBtn=document.getElementById('browseBtn'),detectBtn=document.getElementById('detectBtn'),
+  saveBtn=document.getElementById('saveBtn'),confRange=document.getElementById('confRange'),
+  confVal=document.getElementById('confVal'),drawBoxes=document.getElementById('drawBoxes'),
+  detBackend=document.getElementById('detBackend'),detCanvas=document.getElementById('detCanvas'),
+  canvasPlaceholder=document.getElementById('canvasPlaceholder'),canvasMeta=document.getElementById('canvasMeta'),
+  detEmpty=document.getElementById('detEmpty'),detResults=document.getElementById('detResults'),
+  detSummary=document.getElementById('detSummary'),detList=document.getElementById('detList'),
+  exportDetBtn=document.getElementById('exportDetBtn'),sDot=document.getElementById('sDot'),sLabel=document.getElementById('sLabel');
+let loadedImg=null,lastDets=[];
+
+confRange.oninput=()=>confVal.textContent=(confRange.value/100).toFixed(2);
+browseBtn.onclick=e=>{e.stopPropagation();fileInput.click();};
+dropZone.onclick=()=>fileInput.click();
+fileInput.onchange=e=>{if(e.target.files[0])loadImgFile(e.target.files[0]);};
+dropZone.ondragover=e=>{e.preventDefault();dropZone.classList.add('drag-over');};
+dropZone.ondragleave=()=>dropZone.classList.remove('drag-over');
+dropZone.ondrop=e=>{e.preventDefault();dropZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImgFile(f);};
+
+function loadImgFile(file){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{loadedImg=img;drawOnCanvas(img);detectBtn.disabled=false;canvasMeta.textContent=`${file.name} · ${img.naturalWidth}×${img.naturalHeight}`;setStatus('ready','READY');};
+  img.src=url;
+}
+function drawOnCanvas(img){
+  canvasPlaceholder.classList.add('hidden');detCanvas.classList.remove('hidden');
+  const maxW=detCanvas.parentElement.clientWidth-2;
+  const scale=Math.min(1,maxW/img.naturalWidth);
+  detCanvas.width=img.naturalWidth*scale;detCanvas.height=img.naturalHeight*scale;
+  detCanvas.getContext('2d').drawImage(img,0,0,detCanvas.width,detCanvas.height);
+}
+
+detectBtn.onclick=async()=>{
+  if(!loadedImg)return;
+  detectBtn.disabled=true;detectBtn.innerHTML='<span class="spinner"></span> DETECTING…';
+  setStatus('processing','PROCESSING');
+  const file=fileInput.files[0];
+  const data=file?await API.detect(file,detBackend.value,confRange.value/100):API._mockDetect();
+  lastDets=data.detections||[];
+  if(drawBoxes.checked)UI.drawBBoxes(detCanvas,loadedImg,lastDets);
+  renderDets(lastDets,data.backend||detBackend.value);
+  saveBtn.style.display='inline-flex';
+  detectBtn.disabled=false;detectBtn.innerHTML='<span>◻</span> RUN DETECTION';
+  setStatus('done','DONE');
+};
+
+function renderDets(dets,backend){
+  detEmpty.classList.add('hidden');detResults.classList.remove('hidden');
+  const ms=dets[0]?.inference_ms||'—';
+  detSummary.innerHTML=`
+    <div style="text-align:center;"><div style="font-family:var(--cond);font-size:1.7rem;font-weight:900;color:var(--accent2);line-height:1;">${dets.length}</div><div style="font-family:var(--mono);font-size:.6rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;">Objects Found</div></div>
+    <div style="text-align:center;"><div style="font-family:var(--cond);font-size:1.7rem;font-weight:900;color:var(--accent2);line-height:1;">${ms}ms</div><div style="font-family:var(--mono);font-size:.6rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;">Inference</div></div>`;
+  UI.renderDetections(detList,dets);
+}
+saveBtn.onclick=()=>{const a=document.createElement('a');a.download='detected.png';a.href=detCanvas.toDataURL();a.click();UI.toast('Image saved!');};
+exportDetBtn.onclick=()=>{if(!lastDets.length)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(lastDets,null,2)],{type:'application/json'}));a.download='detections.json';a.click();UI.toast('Exported!');};
+function setStatus(s,t){sDot.className='status-dot';sDot.classList.add(`status-dot--${s}`);sLabel.textContent=t;}
+</script>
+</body>
+</html>

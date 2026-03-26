@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VisionCore — Documentation</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<canvas id="grain" style="position:fixed;inset:0;pointer-events:none;z-index:9989;"></canvas>
+<nav class="navbar">
+  <div class="navbar-brand"><div class="navbar-logo">VC</div>VISION<span class="dot">·</span>CORE</div>
+  <ul class="navbar-nav">
+    <li><a href="index.html">Classify</a></li>
+    <li><a href="detect.html">Detect</a></li>
+    <li><a href="batch.html">Batch</a></li>
+    <li><a href="docs.html" class="active">Docs</a></li>
+  </ul>
+</nav>
+<div class="docs-layout">
+  <aside class="docs-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Getting Started</div>
+      <a class="sidebar-link active" href="#overview">Overview</a>
+      <a class="sidebar-link" href="#install">Installation</a>
+      <a class="sidebar-link" href="#run">How to Run</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Python API</div>
+      <a class="sidebar-link" href="#classify-api">ImageRecognizer</a>
+      <a class="sidebar-link" href="#detect-api">ObjectDetector</a>
+      <a class="sidebar-link" href="#preproc-api">Preprocessing</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reference</div>
+      <a class="sidebar-link" href="#models">Supported Models</a>
+      <a class="sidebar-link" href="#cli">CLI Reference</a>
+      <a class="sidebar-link" href="#structure">Project Structure</a>
+    </div>
+  </aside>
+  <main class="docs-content">
+    <section class="docs-section" id="overview">
+      <div class="docs-eyebrow">// overview</div>
+      <h2 class="docs-h2">VisionCore</h2>
+      <p class="docs-p">VisionCore is a production-ready Python image recognition system with a full web frontend. It supports <strong style="color:var(--text-hi)">image classification</strong>, <strong style="color:var(--text-hi)">object detection</strong>, and <strong style="color:var(--text-hi)">batch processing</strong> across TensorFlow, PyTorch, and OpenCV backends.</p>
+      <div class="alert alert-tip"><strong>Quick start:</strong> See the <a href="#run">How to Run</a> section to be up in 5 minutes.</div>
+    </section>
+    <section class="docs-section" id="install">
+      <div class="docs-eyebrow">// installation</div>
+      <h2 class="docs-h2">Installation</h2>
+      <p class="docs-p">Requires <strong style="color:var(--text-hi)">Python 3.9+</strong>. Open Command Prompt (cmd) in your project folder:</p>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="cmt"># Install all required packages</span>
+pip install flask flask-cors Pillow numpy opencv-python
+
+<span class="cmt"># Optional: for real ML inference</span>
+pip install tensorflow          <span class="cmt"># TensorFlow backend</span>
+pip install torch torchvision   <span class="cmt"># PyTorch + YOLO backend</span></pre></div>
+      <div class="alert alert-info"><strong>Note:</strong> Without TensorFlow/PyTorch the app runs on <strong>mock/demo data</strong> — perfect for testing the UI.</div>
+    </section>
+    <section class="docs-section" id="run">
+      <div class="docs-eyebrow">// how to run</div>
+      <h2 class="docs-h2">How to Run</h2>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="cmt"># Step 1 — Open Command Prompt (cmd), go to project folder</span>
+cd D:\visioncore
+
+<span class="cmt"># Step 2 — Install packages (first time only)</span>
+pip install flask flask-cors Pillow numpy opencv-python
+
+<span class="cmt"># Step 3 — Start the server</span>
+python api_server.py
+
+<span class="cmt"># Step 4 — Open browser</span>
+<span class="str">http://localhost:5000</span></pre></div>
+      <div class="alert alert-tip"><strong>Next time:</strong> Just run <code>python api_server.py</code> and open <code>http://localhost:5000</code></div>
+    </section>
+    <section class="docs-section" id="classify-api">
+      <div class="docs-eyebrow">// python api</div>
+      <h2 class="docs-h2">ImageRecognizer</h2>
+      <p class="docs-p">Multi-backend image classification using pre-trained ImageNet models.</p>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="kw">from</span> src.image_recognizer <span class="kw">import</span> ImageRecognizer
+
+r = <span class="fn">ImageRecognizer</span>(backend=<span class="str">'tensorflow'</span>, top_k=<span class="str">5</span>)
+preds = r.<span class="fn">predict</span>(<span class="str">'photo.jpg'</span>)
+
+<span class="kw">for</span> p <span class="kw">in</span> preds:
+    <span class="fn">print</span>(<span class="str">f"#{p['rank']} {p['label']} — {p['confidence']:.2%}"</span>)</pre></div>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Options</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>backend</code></td><td><code>tensorflow</code> · <code>torch</code> · <code>opencv</code></td><td><code>tensorflow</code></td></tr>
+          <tr><td><code>top_k</code></td><td>Any integer</td><td><code>5</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="docs-section" id="detect-api">
+      <div class="docs-eyebrow">// python api</div>
+      <h2 class="docs-h2">ObjectDetector</h2>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="kw">from</span> src.object_detector <span class="kw">import</span> ObjectDetector
+
+d    = <span class="fn">ObjectDetector</span>(backend=<span class="str">'yolo'</span>, confidence_threshold=<span class="str">0.5</span>)
+dets = d.<span class="fn">detect</span>(<span class="str">'photo.jpg'</span>)
+d.<span class="fn">annotate_image</span>(<span class="str">'photo.jpg'</span>, <span class="str">'annotated.jpg'</span>)</pre></div>
+    </section>
+    <section class="docs-section" id="preproc-api">
+      <div class="docs-eyebrow">// python api</div>
+      <h2 class="docs-h2">Preprocessing</h2>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="kw">from</span> utils.preprocessing <span class="kw">import</span> load_image, resize_image, augment_image
+
+img = <span class="fn">load_image</span>(<span class="str">'photo.jpg'</span>)
+img = <span class="fn">resize_image</span>(img, (224,224))
+img = <span class="fn">augment_image</span>(img, flip_h=<span class="kw">True</span>, brightness=<span class="str">1.2</span>)</pre></div>
+    </section>
+    <section class="docs-section" id="models">
+      <div class="docs-eyebrow">// reference</div>
+      <h2 class="docs-h2">Supported Models</h2>
+      <table class="docs-table">
+        <thead><tr><th>Model</th><th>Task</th><th>Backend</th><th>Classes</th></tr></thead>
+        <tbody>
+          <tr><td>MobileNetV2</td><td>Classification</td><td>TensorFlow</td><td>1000</td></tr>
+          <tr><td>ResNet-50</td><td>Classification</td><td>PyTorch</td><td>1000</td></tr>
+          <tr><td>GoogLeNet</td><td>Classification</td><td>OpenCV DNN</td><td>1000</td></tr>
+          <tr><td>YOLOv5s</td><td>Detection</td><td>PyTorch</td><td>80 COCO</td></tr>
+          <tr><td>SSD MobileNet v3</td><td>Detection</td><td>OpenCV DNN</td><td>80 COCO</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="docs-section" id="cli">
+      <div class="docs-eyebrow">// reference</div>
+      <h2 class="docs-h2">CLI Reference</h2>
+      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><span class="cmt"># Classify a single image</span>
+python main.py classify --image photo.jpg --backend tensorflow --top-k 5
+
+<span class="cmt"># Detect objects</span>
+python main.py detect --image photo.jpg --backend yolo --annotate
+
+<span class="cmt"># Batch classify a folder</span>
+python main.py batch --folder data/ --output results.json
+
+<span class="cmt"># Show image info</span>
+python main.py info --image photo.jpg</pre></div>
+    </section>
+    <section class="docs-section" id="structure">
+      <div class="docs-eyebrow">// reference</div>
+      <h2 class="docs-h2">Project Structure</h2>
+      <div class="code-block"><pre>visioncore/
+├── <span class="fn">api_server.py</span>          <span class="cmt">← Flask server (run this!)</span>
+├── main.py                <span class="cmt">← CLI entry point</span>
+├── requirements.txt
+├── <span class="fn">frontend/</span>
+│   ├── index.html         <span class="cmt">← Classification UI</span>
+│   ├── detect.html        <span class="cmt">← Object Detection UI</span>
+│   ├── batch.html         <span class="cmt">← Batch Processing UI</span>
+│   ├── docs.html          <span class="cmt">← This page</span>
+│   ├── css/style.css
+│   └── js/app.js
+├── <span class="fn">src/</span>
+│   ├── image_recognizer.py
+│   └── object_detector.py
+├── utils/preprocessing.py
+└── tests/</pre></div>
+      <div class="alert alert-info"><strong>Run tests:</strong> <code>pip install pytest</code> then <code>pytest tests/ -v</code></div>
+    </section>
+  </main>
+</div>
+<footer class="footer">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <div class="footer-left">[<span>VISIONCORE</span>] · MIT License</div>
+    <div class="footer-links"><a href="index.html">Classify</a><a href="detect.html">Detect</a><a href="batch.html">Batch</a><a href="docs.html">Docs</a></div>
+  </div>
+</footer>
+<script src="js/app.js"></script>
+<script>
+const sections=document.querySelectorAll('.docs-section');
+const links=document.querySelectorAll('.sidebar-link');
+new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-30% 0px -60% 0px'}).observe(sections[0]||document.body);
+sections.forEach(s=>new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`.sidebar-link[href="#${e.target.id}"]`);if(a)a.classList.add('active');}});},{rootMargin:'-30% 0px -60% 0px'}).observe(s));
+document.querySelectorAll('.sidebar-link').forEach(l=>l.addEventListener('click',e=>{e.preventDefault();document.getElementById(l.getAttribute('href').slice(1))?.scrollIntoView({behavior:'smooth'});}));
+function copyCode(btn){const text=btn.closest('.code-block').querySelector('pre').textContent;navigator.clipboard.writeText(text).then(()=>{btn.textContent='COPIED!';setTimeout(()=>btn.textContent='COPY',1800);});}
+</script>
+</body>
+</html>
